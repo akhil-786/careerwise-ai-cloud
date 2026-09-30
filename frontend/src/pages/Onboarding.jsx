@@ -1,13 +1,14 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { createUser } from "../services/api";
+import { createUser, getSessionUser, updateSessionUser } from "../services/api";
 
 function Onboarding() {
   const navigate = useNavigate();
+  const account = useMemo(() => getSessionUser(), []);
 
   const [formData, setFormData] = useState({
-    name: "",
-    email: "",
+    name: account?.name || "",
+    email: account?.email || "",
     education: "",
     skills: "",
     interests: "",
@@ -45,11 +46,8 @@ function Onboarding() {
           .filter(Boolean),
       });
 
-      const userId = response.user.userId;
-
-      localStorage.setItem("careercloud_userId", userId);
-
-      navigate("/assessment");
+      updateSessionUser(response.user);
+      navigate("/dashboard");
     } catch (error) {
       console.error(error);
       setError("Unable to create your profile. Please try again.");
@@ -93,6 +91,7 @@ function Onboarding() {
                 placeholder="Enter your name"
                 value={formData.name}
                 onChange={handleChange}
+                readOnly={Boolean(account?.name)}
                 required
               />
             </div>
@@ -106,6 +105,7 @@ function Onboarding() {
                 placeholder="you@example.com"
                 value={formData.email}
                 onChange={handleChange}
+                readOnly={Boolean(account?.email)}
                 required
               />
             </div>
@@ -168,7 +168,7 @@ function Onboarding() {
             >
               {loading
                 ? "Creating Profile..."
-                : "Continue to Assessment →"}
+                : "Save profile and open dashboard →"}
             </button>
           </form>
         </div>

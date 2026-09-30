@@ -1,91 +1,106 @@
-const API_BASE_URL = "/api";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "/api";
 
-// Create User
+export const SESSION_KEYS = {
+  token: "careercloud_token",
+  user: "careercloud_user",
+};
+
+export function getSessionUser() {
+  try {
+    return JSON.parse(sessionStorage.getItem(SESSION_KEYS.user) || "null");
+  } catch {
+    return null;
+  }
+}
+
+export function saveSession({ token, user }) {
+  sessionStorage.setItem(SESSION_KEYS.token, token);
+  sessionStorage.setItem(SESSION_KEYS.user, JSON.stringify(user));
+}
+
+export function updateSessionUser(user) {
+  sessionStorage.setItem(SESSION_KEYS.user, JSON.stringify(user));
+}
+
+export function clearSession() {
+  sessionStorage.removeItem(SESSION_KEYS.token);
+  sessionStorage.removeItem(SESSION_KEYS.user);
+}
+
+export function hasSession() {
+  return Boolean(sessionStorage.getItem(SESSION_KEYS.token));
+}
+
+async function request(path, options = {}) {
+  const token = sessionStorage.getItem(SESSION_KEYS.token);
+  const headers = { ...(options.body ? { "Content-Type": "application/json" } : {}), ...options.headers };
+  if (token) headers.Authorization = `Bearer ${token}`;
+  const response = await fetch(`${API_BASE_URL}${path}`, { ...options, headers });
+  const text = await response.text();
+  let payload;
+  try {
+    payload = text ? JSON.parse(text) : {};
+  } catch {
+    payload = { message: text || "The server returned an invalid response." };
+  }
+  if (!response.ok) {
+    if (response.status === 401 && !path.startsWith("/auth/")) clearSession();
+    throw new Error(payload.message || `Request failed (${response.status})`);
+  }
+  return payload;
+}
+
+export async function registerAccount(account) {
+  return request("/auth/register", { method: "POST", body: JSON.stringify(account) });
+}
+
+export async function signIn(credentials) {
+  return request("/auth/login", { method: "POST", body: JSON.stringify(credentials) });
+}
+
 export async function createUser(userData) {
-  const response = await fetch(`${API_BASE_URL}/users`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(userData),
-  });
-
-  if (!response.ok) {
-    throw new Error("Failed to create user");
-  }
-
-  return response.json();
+  return request("/users", { method: "POST", body: JSON.stringify(userData) });
 }
 
-// Get User
 export async function getUser(userId) {
-  const response = await fetch(`${API_BASE_URL}/users/${userId}`);
-
-  if (!response.ok) {
-    throw new Error("Failed to get user");
-  }
-
-  return response.json();
+  return request(`/users/${encodeURIComponent(userId)}`);
 }
 
-// Submit Assessment
+export async function getDashboard(userId) {
+  return request(`/dashboard/${encodeURIComponent(userId)}`);
+}
+
+export async function updateSkills(userId, skills) {
+  return request(`/users/${encodeURIComponent(userId)}/skills`, {
+    method: "PUT",
+    body: JSON.stringify({ skills }),
+  });
+}
+
 export async function submitAssessment(assessmentData) {
-  const response = await fetch(`${API_BASE_URL}/assessment`, {
+  return request("/assessment", {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
     body: JSON.stringify(assessmentData),
   });
-
-  if (!response.ok) {
-    throw new Error("Failed to submit assessment");
-  }
-
-  return response.json();
 }
 
-// Generate Career Recommendation
 export async function generateRecommendation(assessmentId) {
-    const response = await fetch(`${API_BASE_URL}/recommendation`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        assessmentId,
-      }),
-    });
-  
-    const responseText = await response.text();
-  
-    console.log("Recommendation status:", response.status);
-    console.log("Recommendation response:", responseText);
-  
-    if (!response.ok) {
-      throw new Error(
-        `Recommendation API failed: ${response.status} ${responseText}`
-      );
-    }
-  
-    return JSON.parse(responseText);
-  }
-
-// Generate Learning Roadmap
-export async function generateRoadmap(recommendationId) {
-  const response = await fetch(`${API_BASE_URL}/roadmap`, {
+  return request("/recommendation", {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      recommendationId,
-    }),
+    body: JSON.stringify({ assessmentId }),
   });
+}
 
-  if (!response.ok) {
-    throw new Error("Failed to generate roadmap");
-  }
+export async function generateRoadmap(recommendationId) {
+  return request("/roadmap", {
+    method: "POST",
+    body: JSON.stringify({ recommendationId }),
+  });
+}
 
-  return response.json();
+export async function getResumeUploadUrl(fileName) {
+  return request("/resume/upload-url", {
+    method: "POST",
+    body: JSON.stringify({ fileName }),
+  });
 }

@@ -61,14 +61,16 @@ def submit_assessment(event):
             event.get("body") or "{}"
         )
 
-        user_id = body.get("userId")
+        authorizer = (event.get("requestContext") or {}).get("authorizer") or {}
+        claims = authorizer.get("claims") or authorizer.get("jwt", {}).get("claims") or {}
+        user_id = authorizer.get("userId") or authorizer.get("principalId") or claims.get("sub")
         answers = body.get("answers")
 
         if not user_id:
             return create_response(
-                400,
+                401,
                 {
-                    "message": "userId is required"
+                    "message": "Sign in is required."
                 }
             )
 
@@ -128,10 +130,7 @@ def submit_assessment(event):
 
 def lambda_handler(event, context):
 
-    print(
-        "Received event:",
-        json.dumps(event)
-    )
+    print("Assessment request:", event.get("httpMethod", ""), event.get("path", ""))
 
     method = event.get(
         "httpMethod",

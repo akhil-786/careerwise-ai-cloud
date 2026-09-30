@@ -35,7 +35,7 @@ AWS_REGION = os.getenv(
     "us-east-1"
 )
 
-GEMINI_API_KEY = ""
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 
 # ==============================
 # DynamoDB Connection
@@ -182,6 +182,14 @@ def recommend_career(event):
                 }
             )
 
+        authorizer = (event.get("requestContext") or {}).get("authorizer") or {}
+        claims = authorizer.get("claims") or authorizer.get("jwt", {}).get("claims") or {}
+        user_id = authorizer.get("userId") or authorizer.get("principalId") or claims.get("sub")
+        if not user_id:
+            return create_response(401, {"message": "Sign in is required."})
+        if assessment.get("userId") != user_id:
+            return create_response(403, {"message": "You can only use your own assessment."})
+
         answers = assessment.get(
             "answers",
             {}
@@ -272,10 +280,7 @@ def recommend_career(event):
 
 def lambda_handler(event, context):
 
-    print(
-        "Received event:",
-        json.dumps(event)
-    )
+    print("Recommendation request:", event.get("httpMethod", ""), event.get("path", ""))
 
     method = event.get(
         "httpMethod",

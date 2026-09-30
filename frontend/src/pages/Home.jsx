@@ -12,7 +12,7 @@ function Home() {
 
         <button
           className="nav-button"
-          onClick={() => navigate("/onboarding")}
+          onClick={() => navigate("/login")}
         >
           Get Started
         </button>
@@ -39,14 +39,14 @@ function Home() {
           <div className="hero-actions">
             <button
               className="primary-button"
-              onClick={() => navigate("/onboarding")}
+              onClick={() => navigate("/login")}
             >
-              Start Career Assessment →
+              Sign in or create your account →
             </button>
 
             <button
               className="secondary-button"
-              onClick={() => navigate("/onboarding")}
+              onClick={() => navigate("/login")}
             >
               Explore How It Works
             </button>

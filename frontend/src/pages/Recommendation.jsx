@@ -4,19 +4,14 @@ import { generateRecommendation } from "../services/api";
 
 function Recommendation() {
   const navigate = useNavigate();
+  const assessmentId = sessionStorage.getItem("careercloud_assessmentId");
 
   const [recommendation, setRecommendation] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(Boolean(assessmentId));
+  const [error, setError] = useState(assessmentId ? "" : "Assessment information not found.");
 
   useEffect(() => {
-    const assessmentId = localStorage.getItem("careercloud_assessmentId");
-
-    if (!assessmentId) {
-      setError("Assessment information not found.");
-      setLoading(false);
-      return;
-    }
+    if (!assessmentId) return;
 
     const generate = async () => {
       try {
@@ -29,7 +24,7 @@ function Recommendation() {
         setRecommendation(data);
 
         if (data?.recommendationId) {
-          localStorage.setItem(
+          sessionStorage.setItem(
             "careercloud_recommendationId",
             data.recommendationId
           );
@@ -43,7 +38,7 @@ function Recommendation() {
     };
 
     generate();
-  }, []);
+  }, [assessmentId]);
 
   if (loading) {
     return (
@@ -149,6 +144,14 @@ function Recommendation() {
           className="roadmap-button"
         >
           Generate My Learning Roadmap →
+        </button>
+
+        <button
+          onClick={() => navigate("/dashboard")}
+          className="roadmap-button"
+          style={{ marginLeft: 12, background: "#fff", color: "#245ddd", border: "1px solid #d7e1f0" }}
+        >
+          Back to Dashboard
         </button>
 
       </div>

@@ -87,21 +87,14 @@ const roadmapStages = [
 
 function Roadmap() {
   const navigate = useNavigate();
+  const recommendationId = sessionStorage.getItem("careercloud_recommendationId");
 
   const [roadmap, setRoadmap] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(Boolean(recommendationId));
+  const [error, setError] = useState(recommendationId ? "" : "Recommendation information not found.");
 
   useEffect(() => {
-    const recommendationId = localStorage.getItem(
-      "careercloud_recommendationId"
-    );
-
-    if (!recommendationId) {
-      setError("Recommendation information not found.");
-      setLoading(false);
-      return;
-    }
+    if (!recommendationId) return;
 
     const createRoadmap = async () => {
       try {
@@ -112,7 +105,7 @@ function Roadmap() {
         setRoadmap(response);
 
         if (response.roadmap?.roadmapId) {
-          localStorage.setItem(
+          sessionStorage.setItem(
             "careercloud_roadmapId",
             response.roadmap.roadmapId
           );
@@ -126,7 +119,7 @@ function Roadmap() {
     };
 
     createRoadmap();
-  }, []);
+  }, [recommendationId]);
 
   if (loading) {
     return (

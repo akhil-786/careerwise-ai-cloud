@@ -28,10 +28,11 @@ function Assessment() {
     e.preventDefault();
     setError("");
 
-    const userId = localStorage.getItem("careercloud_userId");
+    const user = JSON.parse(sessionStorage.getItem("careercloud_user") || "null");
+    const userId = user?.userId;
 
     if (!userId) {
-      setError("User information not found. Please complete onboarding again.");
+      setError("User information not found. Please sign in again.");
       return;
     }
 
@@ -39,7 +40,6 @@ function Assessment() {
 
     try {
       const response = await submitAssessment({
-        userId,
         answers,
       });
 
@@ -47,7 +47,7 @@ function Assessment() {
 
       const assessmentId = response.assessment.assessmentId;
 
-        localStorage.setItem(
+        sessionStorage.setItem(
           "careercloud_assessmentId",
           assessmentId
         );
